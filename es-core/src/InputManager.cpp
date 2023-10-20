@@ -31,7 +31,7 @@ int SDL_USER_CECBUTTONUP   = -1;
 
 InputManager* InputManager::mInstance = NULL;
 
-InputManager::InputManager() : mKeyboardInputConfig(NULL)
+InputManager::InputManager() : mKeyboardInputConfig(NULL), mMouseButtonsInputConfig(NULL)
 {
 }
 
@@ -80,6 +80,11 @@ void InputManager::init()
 	CECInput::init();
 	mCECInputConfig = new InputConfig(DEVICE_CEC, "CEC", CEC_GUID_STRING);
 	loadInputConfig(mCECInputConfig);
+
+	// Mouse input, hardcoded not configurable with es_input.cfg
+	mMouseButtonsInputConfig = new InputConfig(DEVICE_MOUSE, -1, "Mouse", CEC_GUID_STRING, 0, 0, 0);
+	mMouseButtonsInputConfig->mapInput(BUTTON_OK, Input(DEVICE_MOUSE, TYPE_BUTTON, 1, 1, true));
+	mMouseButtonsInputConfig->mapInput(BUTTON_BACK, Input(DEVICE_MOUSE, TYPE_BUTTON, 3, 1, true));
 }
 
 void InputManager::addJoystickByDeviceIndex(int id)
@@ -174,6 +179,12 @@ void InputManager::deinit()
 		mCECInputConfig = NULL;
 	}
 
+	if (mMouseButtonsInputConfig != NULL)
+	{
+		delete mMouseButtonsInputConfig;
+		mMouseButtonsInputConfig = NULL;
+	}
+
 	CECInput::deinit();
 
 	SDL_JoystickEventState(SDL_DISABLE);
@@ -205,10 +216,11 @@ InputConfig* InputManager::getInputConfigByDevice(int device)
 {
 	if(device == DEVICE_KEYBOARD)
 		return mKeyboardInputConfig;
-	else if(device == DEVICE_CEC)
+	if(device == DEVICE_CEC)
 		return mCECInputConfig;
-	else
-		return mInputConfigs[device];
+	if(device == DEVICE_MOUSE)
+		return mMouseButtonsInputConfig;
+	return mInputConfigs[device];
 }
 
 bool InputManager::parseEvent(const SDL_Event& ev, Window* window)
